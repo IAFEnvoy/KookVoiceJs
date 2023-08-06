@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "audio-loader": "^1.0.3",
+    "fs": "^0.0.1-security",
+    "kbotify": "^0.2.10",
+    "request": "^2.88.2",
+    "websocket": "^1.0.34"
+  }
+}

@@ -1,0 +1,6 @@
+{
+    "request": true,
+    "id": 1000000,
+    "method": "getRouterRtpCapabilities",
+    "data": {}
+}
