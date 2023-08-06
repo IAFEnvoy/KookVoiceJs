@@ -2,7 +2,7 @@ const fs = require('fs');
 const WebSocket = require('websocket').client;
 
 const ranInt = (min, max) => Math.floor(Math.random() * (max - min)) + min;
-let stage = 0, callbackFunction = null, pingTimer = null;
+let stage = 0, callbackFunction = null;
 
 const loadJsonAndGenId = (path) => {
     let json = JSON.parse(fs.readFileSync(path));
@@ -44,10 +44,6 @@ class VoiceWebSocket {
                     } else if (stage == 4) {
                         console.log('Complete rtcp url receive');
                         console.log('Rtcp url: ' + this.rtcpUrl);
-                        pingTimer = setInterval(_ => {
-                            console.log('Running WebSocket keep-alive ping');
-                            connection.ping();
-                        }, 30 * 1000);
                         if (callbackFunction != null) callbackFunction(this.rtcpUrl);
                     }
                 }
@@ -55,6 +51,12 @@ class VoiceWebSocket {
         });
         this.connection = null;
         this.rtcpUrl = "";
+        setInterval(_ => {
+            if (this.connection != null) {
+                console.log('Running WebSocket keep-alive ping');
+                this.connection.ping();
+            }
+        }, 30 * 1000);
     }
     connect = async (channel_id, callback) => {
         callbackFunction = callback;
@@ -68,7 +70,6 @@ class VoiceWebSocket {
     disconnect = () => {
         this.connection.close();
         this.connection = null;
-        pingTimer = null;
     }
 }
 
