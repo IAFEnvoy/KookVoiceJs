@@ -1,42 +1,33 @@
-const VoiceWebSocket = require("./websocket");
+const fs = require('fs');
 const KBotify = require('kbotify').KBotify;
-const { play } = require("./process");
-const { getSearchResult, neteaseSongData } = require("./parse/netease");
-const Card = require('./card');
+const { getSearchResult, neteaseSongData, setCookie } = require("./parse/netease");
+const { danger, searchResult, info, list } = require('./card');
 const { Voice } = require("./voice");
 
-const token = '1/MTYxNTI=/Xs54ZjeKTxW78H0Lh0VkjQ==';
-let rtcp = null;
-
+const config = JSON.parse(fs.readFileSync('./main.json'))
+const token = config.token;
 const bot = new KBotify({
     mode: 'websocket',
     token: token,
     ignoreDecryptError: false
 });
 const voice = new Voice(token, bot);
+setCookie(config.netease_music_cookie);
 
 bot.message.on('text', async (msg) => {
     if (msg.author.bot) return;
     console.log(`<-TEXT ${msg.author.nickname}(${msg.author.id}) [${msg.channelName}] ${msg.content}`);
-    if (msg.content.startsWith('/play')) {
-        let items = await fetch('https://www.kookapp.cn/api/v3/channel-user/get-joined-channel?user_id=' + msg.authorId + '&guild_id=' + msg.guildId, {
-            headers: { Authorization: 'Bot ' + token }
-        }).then(res => res.json()).then(json => json.data.items);
-        if (items.length == 0) {
-            bot.API.message.create(1, msg.channelId, '你需要先加入一个语音频道');
-        } else {
-            rtcp = new VoiceWebSocket(token, rtcpUrl => {
-                console.log(rtcpUrl);
-                play(rtcpUrl, msg.content.split(' ')[1].split(']')[0].substring(1));
-            });
-            await rtcp.connect(items[0].id);
-        }
+    if (msg.content.startsWith('/menu')) {
+        if (!voice.playing)
+            bot.API.message.create(10, msg.channelId, JSON.stringify(info('当前没有正在播放的歌曲')));
+        else
+            bot.API.message.create(10, msg.channelId, JSON.stringify(list(voice.nowPlay, voice.queue)));
     }
     if (msg.content.startsWith('/search')) {
         let keyWord = msg.content.substring(8);
         let result = await getSearchResult(keyWord);
         console.log(result);
-        bot.API.message.create(10, msg.channelId, Card.searchResult(keyWord, result));
+        bot.API.message.create(10, msg.channelId, searchResult(keyWord, result));
     }
 });
 
@@ -47,14 +38,13 @@ bot.message.on('buttonEvent', async (event) => {
         let items = await fetch('https://www.kookapp.cn/api/v3/channel-user/get-joined-channel?user_id=' + event.userId + '&guild_id=' + event.guildId, {
             headers: { Authorization: 'Bot ' + token }
         }).then(res => res.json()).then(json => json.data.items);
-        if (items.length == 0) {
-            bot.API.message.create(1, msg.channelId, '你需要先加入一个语音频道');
-        } else {
+        if (items.length == 0)
+            bot.API.message.create(10, event.channelId, JSON.stringify(danger('你需要先加入一个语音频道')));
+        else
             voice.connect(items[0].id, event.channelId, _ => {
                 let data = neteaseSongData[s[1]];
-                voice.addSong(data.name, data.url, { sender: { name: event.user.nickname ?? event.user.username } });
+                voice.addSong(data.name, data.url, event.user.nickname ?? event.user.username, {});
             });
-        }
     }
 });
 

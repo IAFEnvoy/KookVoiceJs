@@ -1,3 +1,4 @@
+const { nextSongCard, info, addSong } = require("./card");
 const { play, connect } = require("./process");
 const VoiceWebSocket = require("./websocket");
 
@@ -20,8 +21,10 @@ class Voice {
         });
     }
     disconnect = () => this.voiceWebSocket.disconnect();
-    addSong = (name, url, extra_data) => {
-        this.queue.push({ name, url, extra_data });
+    addSong = (name, url, sender, extra_data) => {
+        let data = { name, url, sender, extra_data };
+        this.queue.push(data);
+        this.bot.API.message.create(10, this.channel_id, JSON.stringify(addSong(data)));
         if (!this.playing) {
             this.playing = true;
             this.play();
@@ -29,14 +32,15 @@ class Voice {
     }
     play = () => {
         this.nowPlay = this.queue.shift();
-        this.bot.API.message.create(9, this.channel_id, '正在播放：' + this.nowPlay.name);
+        this.bot.API.message.create(10, this.channel_id, JSON.stringify(nextSongCard(this.nowPlay)));
         play(this.nowPlay.url, _ => {
             if (this.queue.length == 0) {
                 this.playing = false;
-                this.bot.API.message.create(9, this.channel_id, '播放结束');
-            } else {
+                this.nowPlay = null;
+                this.bot.API.message.create(10, this.channel_id, JSON.stringify(info('播放结束')));
+                this.voiceWebSocket.disconnect();
+            } else
                 this.play();
-            }
         });
     }
 }
