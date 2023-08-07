@@ -27,21 +27,22 @@ class VoiceWebSocket {
                     console.log("<- " + message.utf8Data + "");
                     let data = JSON.parse(message.utf8Data);
                     if (stage == 1) {
+                        stage = 2;
                         console.log('Stage 2');
                         connection.send(JSON.stringify(loadJsonAndGenId('./data/stage2.json')));
-                        stage = 2;
                     } else if (stage == 2) {
+                        stage = 3;
                         console.log('Stage 3');
                         connection.send(JSON.stringify(loadJsonAndGenId('./data/stage3.json')));
-                        stage = 3;
                     } else if (stage == 3) {
+                        stage = 4;
                         console.log('Stage 4');
                         this.rtcpUrl = `rtp://${data.data.ip}:${data.data.port}?rtcpport=${data.data.rtcpPort}`;
                         let json = loadJsonAndGenId('./data/stage4.json');
                         json.data.transportId = data.data.id;
                         connection.send(JSON.stringify(json));
-                        stage = 4;
                     } else if (stage == 4) {
+                        stage = 5;
                         console.log('Complete rtcp url receive');
                         console.log('Rtcp url: ' + this.rtcpUrl);
                         if (callbackFunction != null) callbackFunction(this.rtcpUrl);
@@ -51,6 +52,7 @@ class VoiceWebSocket {
         });
         this.connection = null;
         this.rtcpUrl = "";
+        this.channel_id = null;
         setInterval(_ => {
             if (this.connection != null) {
                 console.log('Running WebSocket keep-alive ping');
@@ -59,11 +61,16 @@ class VoiceWebSocket {
         }, 30 * 1000);
     }
     connect = async (channel_id, callback) => {
+        if (channel_id == null) channel_id = this.channel_id;
+        else this.channel_id = channel_id;
         callbackFunction = callback;
         console.log("Getting WS Url");
         let url = await fetch('https://www.kookapp.cn/api/v3/gateway/voice?channel_id=' + channel_id, {
             headers: { Authorization: 'Bot ' + this.token }
-        }).catch(err => console.log(err)).then(res => res.json()).then(json => json.data.gateway_url);
+        }).catch(err => console.log(err)).then(res => res.json()).then(json => {
+            console.log(json);
+            return json.data.gateway_url;
+        });
         console.log('WebSocket Url: ' + url);
         this.socket.connect(url);
     }

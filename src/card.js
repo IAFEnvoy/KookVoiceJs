@@ -178,4 +178,55 @@ const list = (nowPlay, queue) => {
         }]
     }]
 }
-module.exports = { searchResult, nextSongCard, success, danger, info, addSong, list };
+const operation = () => [{
+    "type": "card",
+    "theme": "secondary",
+    "size": "lg",
+    "modules": [{
+        "type": "header",
+        "text": {
+            "type": "plain-text",
+            "content": "控制台"
+        }
+    },
+    {
+        "type": "divider"
+    },
+    {
+        "type": "action-group",
+        "elements": [{
+            "type": "button",
+            "theme": "info",
+            "value": "operation-list",
+            "click": "return-val",
+            "text": {
+                "type": "plain-text",
+                "content": "列表"
+            }
+        }]
+    },
+    {
+        "type": "action-group",
+        "elements": [{
+            "type": "button",
+            "theme": "info",
+            "value": "operation-jump",
+            "click": "return-val",
+            "text": {
+                "type": "plain-text",
+                "content": "切歌"
+            }
+        },
+        {
+            "type": "button",
+            "theme": "info",
+            "value": "operation-stop",
+            "click": "return-val",
+            "text": {
+                "type": "plain-text",
+                "content": "停止"
+            }
+        }]
+    }]
+}]
+module.exports = { searchResult, nextSongCard, success, danger, info, addSong, list, operation };

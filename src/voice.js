@@ -1,5 +1,5 @@
 const { nextSongCard, info, addSong } = require("./card");
-const { play, connect } = require("./process");
+const { play, connect, killRtcp } = require("./process");
 const VoiceWebSocket = require("./websocket");
 
 class Voice {
@@ -11,6 +11,7 @@ class Voice {
         this.playing = false;
         this.bot = bot;
         this.channel_id = null;
+        this.reloading = false;
     }
     connect = (channel_id, source_channel_id, callback) => {
         if (this.voiceWebSocket.connection != null) return callback();
@@ -34,6 +35,7 @@ class Voice {
         this.nowPlay = this.queue.shift();
         this.bot.API.message.create(10, this.channel_id, JSON.stringify(nextSongCard(this.nowPlay)));
         play(this.nowPlay.url, _ => {
+            if (this.reloading) return;
             if (this.queue.length == 0) {
                 this.playing = false;
                 this.nowPlay = null;
@@ -41,6 +43,16 @@ class Voice {
                 this.voiceWebSocket.disconnect();
             } else
                 this.play();
+        });
+    }
+    jump = () => {
+        this.reloading = true;
+        killRtcp();
+        this.voiceWebSocket.disconnect();
+        this.voiceWebSocket.connect(null, url => {
+            connect(url);
+            this.reloading = false;
+            this.play();
         });
     }
 }

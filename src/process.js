@@ -5,7 +5,7 @@ const spawn = (args) => child_process.spawn('ffmpeg', args, {
     stdio: ['pipe', 'pipe', 'pipe']
 });
 
-let ffmpegRtcp = null, ffmpegMusic = null;
+let ffmpegRtcp = null, ffmpegMusic = null, rtcpUrl = "";
 
 let loaded = true, length = 0, ended_time = 0, callbackFunction = null;
 setInterval(_ => {
@@ -18,6 +18,7 @@ setInterval(_ => {
 }, 1000);
 
 const connect = (rtcp) => {
+    rtcpUrl = rtcp;
     let ffmpegArg1 = [`-re`, `-loglevel`, `level+info`, `-nostats`, `-i`, `-`, `-map`, `0:a:0`, `-acodec`, `libopus`, `-ab`, `128k`, `-ac`, `2`, `-ar`, `48000`, `-f`, `tee`, `[select=a:f=rtp:ssrc=1357:payload_type=100]${rtcp}`];
     console.log('Running ffmpeg ' + ffmpegArg1.join(' '));
     ffmpegRtcp = spawn(ffmpegArg1);
@@ -45,4 +46,9 @@ const play = (file, callback) => {
     });
 }
 
-module.exports = { connect, play, loaded, length };
+const killRtcp = () => {
+    ffmpegRtcp.kill(9);
+    ended_time = 0;
+}
+
+module.exports = { connect, play, loaded, length, killRtcp };
